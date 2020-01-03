@@ -1,0 +1,525 @@
+---
+title: 'Tipología y ciclo de vida de los datos: PRA2 - Limpieza y validación de los datos '
+author: "Autor: David Ordorica"
+date: "Enero 2020"
+output:
+  html_document:
+    highlight: default
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+    includes:
+      in_header: 75.584-PEC-header.html
+  word_document: default
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r message= FALSE, warning=FALSE}
+data<-read.csv('./train.csv')
+summary(data)
+str(data)
+```
+***********
+## 4. Análisis de los datos
+************
+
+
+
+Eliminamos los valores NA de Age.
+```{r message= FALSE, warning=FALSE}
+colSums(is.na(data))
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+data<-data[!is.na(data$Age),]
+colSums(is.na(data))
+```
+
+
+Debemos pasar a factor la variable survived
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+data$Survived<-as.factor(data$Survived)
+
+```
+
+
+***********
+### 4.1 Selección de los gurpos de datos que se quieren analizar / comparar
+***********
+Vamos a realizar un análisis preliminar de las variables, para determinar su normalidad y su relación con survived, esto nos ayudará a realizar ejercicios posteriores para tratar de predecir qué pasajeros se salvaron del titanic y cuales no.
+
+Las variables que vamos a analizar son sex, pclass, age, sibsp,parch,embarked,fare y su relación con survived, que es la variable dependiente que tratamos de predecir. El resto de variables como id, name o cabin son datos individuales de cada pasajero que no parece que vayan a aportar una información valiosa.
+
+
+
+***********
+### 4.2 Comprobación de la normalidad y homogeneidad de la varianza.
+
+### 4.3 Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes. 
+
+### 5.Representación de los resultados a partir de tablas y gráficas
+
+
+***********
+
+Por claridad en el informe, en este apartado se compilan los 3 puntos anteriores ya que se realizan las pruebas estadísticas así como los métodos de análisis pertinentes para determinar qué probabilidades tiene cada persona de haber sobrevivido al hundimiento del Titanic, además se representan las tablas y gráficas pertinentes para una mejor visualización de cada apartado del análisis.
+
+
+
+************
+### Análisis descriptivo.
+**********
+
+Vamos a comenzar analizando la variable sex con respecto a survived, en este caso podemos realizar una tabla de contingencia. Al ser 2 variables categóricas no tiene sentido analizar la distribución.
+
+
+```{r message= FALSE, warning=FALSE}
+library(ggplot2)
+ggplot(data,aes(Sex,fill=Survived))+geom_bar() +labs(x="Sex", y="Passengers")+ guides(fill=guide_legend(title=""))+ggtitle("Survived by Sex")
+```
+
+
+
+  
+Vemos cómo el porentaje de mujeres supervivientes es mucho mayor que el de hombres, esto lo podemos comprobar con una tabla de contingencia.
+
+```{r message= FALSE, warning=FALSE}
+tblSex<-table(data$Survived,data$Sex)
+tblSex
+```  
+
+Efectivamente vemos cómo el sexo puede ser un factor determinante a la hora de realizar una predicción sobre la supervivencia.
+
+
+Vamos a ejecutar el test chi-square para asegurar que existen diferencias significativas entre los grupos.
+
+```{r message= FALSE, warning=FALSE}
+ chisq.test(tblSex)
+```
+  
+Efectivamente el test chi-square arroja un p-value bastante pequeño, lo que nos indica que existe una correlación entre estas variables, con lo que el sexo nos puede ayudar a discernir si una persona fue superviviente del titanic o no.
+  
+  
+
+Hacemos el mismo análisis con la variable PClass.
+
+```{r message= FALSE, warning=FALSE}
+library(ggplot2)
+ggplot(data,aes(Pclass,fill=Survived))+geom_bar() +labs(x="Pclass", y="Passengers")+ guides(fill=guide_legend(title=""))+ ggtitle("Survived by Pclass")
+```
+
+
+Vemos cómo existe también una diferencia grande en el porcentaje de supervivientes según el nivel económico de los pasajeros.
+
+Vemos la tabla de contingencia.
+
+```{r message= FALSE, warning=FALSE}
+tblClass<-table(data$Survived,data$Pclass)
+tblClass
+``` 
+
+Ejecutamos el test chi-squared para ver la independencia entre los casos.
+
+```{r message= FALSE, warning=FALSE}
+ chisq.test(tblClass)
+```
+
+En este caso también observamos diferencias significativas en la supervivencia según la variable class, el p-value de nuevo nos indica que debemos rechazar la hipótesis nula de independencia, con lo que vemos cierta correlación entre PClass y Survived.
+
+
+Analizamos ahora la variable Sibsp de la misma forma.
+
+
+```{r message= FALSE, warning=FALSE}
+ggplot(data,aes(SibSp      ,fill=Survived))+geom_bar() +labs(x="Sibsp", y="Passengers")+ guides(fill=guide_legend(title=""))+ggtitle("Survived by SibSp")
+```
+
+
+Atendiendo al gráfico, vemos diferencias significativas en el porcentaje de supervivientes según el número de familiares que están en el barco.
+
+Vamos a realizar al igual que en los casos anteriores la tabla de contingencia y el test chi-square.
+
+
+```{r message= FALSE, warning=FALSE}
+
+tblSibsp<-table(data$Survived,data$SibSp)
+tblSibsp
+```
+
+Efectivamente se observa cómo el porcentaje de supervivencia varía bastante según el número de familiares en el barco.
+
+```{r message= FALSE, warning=FALSE}
+chisq.test(tblSibsp)
+```
+
+
+De nuevo el test chi-squared arroja cierta correlación entre estas variables, con lo que el número de parientes también puede ser una variable importante a la hora de predecir la supervivencia de una persona.
+
+
+Repetimos el mismo análisis con la variable Parch (número de padres/hijos)
+
+```{r message= FALSE, warning=FALSE}
+ggplot(data,aes(Parch,fill=Survived))+geom_bar() +labs(x="Parch", y="Passengers")+ guides(fill=guide_legend(title=""))+ggtitle("Survived by Parch")
+```
+
+```{r message= FALSE, warning=FALSE}
+tblParch<-table(data$Survived,data$Parch)
+tblParch
+``` 
+
+
+Repetimos el test chi-squared 
+
+```{r message= FALSE, warning=FALSE}
+chisq.test(tblParch)
+```
+
+Estos datos también indican diferencias significativas en el la supervivencia con respecto al número de familiares.
+
+
+Repetimos el mismo análisis con el puerto de embarque
+
+```{r message= FALSE, warning=FALSE}
+ggplot(data,aes(Embarked,fill=Survived))+geom_bar() +labs(x="Embarked", y="Passengers")+ guides(fill=guide_legend(title=""))+ggtitle("Survived by Embarked")
+```
+
+Según el gráfico también existen diferencias significativas en el porcentaje de supervivientes según el puerto de embarque. Vamos a comprobarlo de nuevo con la tabla de contingencia y el test chi-squared.
+
+```{r message= FALSE, warning=FALSE}
+tblEmbarked<-table(data$Survived,data$Embarked)
+tblEmbarked
+``` 
+
+
+```{r message= FALSE, warning=FALSE}
+chisq.test(tblEmbarked)
+```
+
+
+El test chi-squared nos dice de nuevo que sí hay una relación entre el puerto de embarque y la supervivencia.
+
+
+Vamos a analizar la variable edad, en este caso se trata de una variable continua con lo que analizaremos su distribución y veremos si existen diferencias significativas en la media de edad de los supervivientes y los no supervivientes.
+
+Vemos las distribuciones de la edad de los supervivientes y los no supervivientes en las siguientes gráficas.
+
+```{r message= FALSE, warning=FALSE}
+
+ggplot(data[data$Survived==0,], aes(x=Age)) + 
+  geom_density()+ ggtitle("Non Survivors Density")
+
+ggplot(data[data$Survived==1,], aes(x=Age)) + 
+  geom_density()+ ggtitle("Survivors Density")
+```
+
+
+Vemos en las gráficas de densidad que ninguna de las 2 sigue una distribución normal.Lo comprobamos con el test de Shapiro Wilk
+```{r message= FALSE, warning=FALSE}
+shapiro.test(data[data$Survived==0,]$Age)
+```
+```{r message= FALSE, warning=FALSE}
+shapiro.test(data[data$Survived==1,]$Age)
+```
+
+Efectivamente se comprueba que la variable edad no sigue una distribución normal. Vamos a comparar las varianzas entre las edades de ambos grupos.
+
+```{r message= FALSE, warning=FALSE}
+ fligner.test(Age ~ Survived, data = data) 
+```
+
+El p-value del test sugiere que existe homoceasticidad entre ambos grupos, es decir que la varianza entre las edades de los supervivientes y los no supervivientes es parecida.
+
+
+Dado que existe homoceasticidad entre los grupos y que tenemos un número significativamente alto de muestras, por el teorema del límite central  podemos realizar un test t-student para comprobar las medias entre ambos grupos.
+
+```{r message= FALSE, warning=FALSE}
+
+t.test(Age ~ Survived,data=data,alternative="two.sided",var.equal=TRUE)
+```
+
+En este caso vemos cómo el p-value es menor a 0.05, con lo que podemos rechazar la hipótesis nula, las medias de edad entre supervivientes y no supervivietnes no son iguales, esto nos dice que la edad puede ser un elemento importante a la hora de clasificar los supervivientes de los no supervivientes.
+
+
+Vamos a repetir el mismo análisis con la variable Fare frente a Survived.
+
+```{r message= FALSE, warning=FALSE}
+
+ggplot(data[data$Survived==0,], aes(x=Fare)) + 
+  geom_density()+ ggtitle("Non Survivors Density")
+
+ggplot(data[data$Survived==1,], aes(x=Fare)) + 
+  geom_density()+ ggtitle("Survivors Density")
+
+
+```
+
+
+
+Vemos claramente que no hay normalidad en estas variables, vamos a realizar el test de homoceasticidad, como en el caso de la edad.
+
+
+
+
+```{r message= FALSE, warning=FALSE}
+ fligner.test(Fare ~ Survived, data = data) 
+```
+En este caso tampoco se observa homoceasticidad entre ambos grupos, debemos rechazar la hipótesis nula, las varianzas no son parecidas, con lo que para hacer una comparación entre los 2 grupos en este caso debemos usar un test no paramétrico de Wilcoxon ya que son grupos independientes.
+
+
+```{r message= FALSE, warning=FALSE}
+ wilcox.test(Fare ~ Survived, data = data)
+```
+
+No podemos rechazar la hipótesis nula, vemos que sí se observan diferencias significativas entre las tarifas pagadas por los supervivientes y los no supervivientes.
+
+
+
+************
+### Modelos predictivos.
+************
+
+Utilizaremos las variables anteriores para tratar de construir un modelo predictivo, en todas las variables estudiadas se ha observado cierta relación con la variable survived, con lo que en principio las usaremos en nuestros modelos.
+
+Para realizar los análisis pertientes y tratar de obtener un modelo predictivo, vamos a leer el dataset de test, unirle el resultado de survived que se encuentra en otra hoja diferente.
+
+```{r message= FALSE, warning=FALSE}
+test<-read.csv('./test.csv')
+summary(test)
+str(test)
+```
+
+
+Vamos a unirle la columna survived del dataset gender_submission
+
+```{r message= FALSE, warning=FALSE}
+test_results<-read.csv('./gender_submission.csv')
+str(test_results)
+```
+```{r message= FALSE, warning=FALSE}
+test<-merge(test,test_results,by="PassengerId")
+str(test)
+```
+
+Ahora limpiamos de nulos y vacíos el dataset de test, vemos que hay NA en Age y Fare.
+
+```{r message= FALSE, warning=FALSE}
+
+colSums(is.na(test))
+
+```
+
+```{r message= FALSE, warning=FALSE}
+
+test<-test[!is.na(test$Age),]
+test<-test[!is.na(test$Fare),]
+```
+
+
+Una vez tenemos el dataset de test preparado, vamos a ejecutar una regresión logística sobre los parámetros que hemos elegido, para ver cómo se comporta.
+
+
+```{r message= FALSE, warning=FALSE}
+logit =glm(formula=Survived ~  Sex+Pclass+Age+SibSp+Parch+Embarked+Fare, data=data,family = binomial)
+summary(logit)
+```
+
+Observamos que según el p-value las variables más importantes para diferenciar supervivientes de no supervivientes son Sex, PClass, Age, SibSp.
+
+
+Realizamos una predicción sobre las mismas columnas de test, esto nos dará la probabilidad de supervivencia, consideramos supervivientes los que tengan una probabilidad mayor de 0.5
+
+```{r message= FALSE, warning=FALSE}
+prediction<-predict(logit,newdata=test[,c(2,4:7,9,11)],type="response")
+
+surv_prediction = ifelse(prediction>0.5,1,0)
+
+table(surv_prediction)
+```
+
+Para comparar los resultados realizamos la matriz de confusión con los valores que tenemos en test.
+
+```{r message= FALSE, warning=FALSE}
+conf_Matrix<-table(surv_prediction,test$Survived)
+conf_Matrix
+porcentaje_correcto<-100 * sum(diag(conf_Matrix)) / sum(conf_Matrix)
+porcentaje_correcto
+```
+
+Observamos cómo por este método se han clasificado correctamente 186 no supervivientes y 113 supervivientes. 
+
+Esto hace una fiabilidad de la predicción del 90.33%
+
+
+
+Vamos a intentar clasificar y predecir los supervivientes mediante un árbol de decisión. Utilizamos la función rpart.
+
+```{r message= FALSE, warning=FALSE}
+
+library(rpart)
+model_cart<-rpart(Survived~Sex+Pclass+Age+SibSp+Parch+Embarked+Fare,data=data,method="class")
+model_cart
+```
+
+
+Vamos a mostrar el árbol
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+par(xpd = NA)
+
+plot(model_cart)
+text(model_cart,use.n=TRUE)
+```
+
+
+
+Vamos a validar este modelo con el set de datos de test:
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+predicted.classes <- predict( model_cart, test[,c(2,4:7,9,11)], type="class" )
+
+```
+
+Vamos a validar el resultado de la predicción con el árbol de decisión
+
+```{r message= FALSE, warning=FALSE}
+conf_Matrix<-table(predicted.classes,test$Survived)
+conf_Matrix
+porcentaje_correcto<-100 * sum(diag(conf_Matrix)) / sum(conf_Matrix)
+porcentaje_correcto
+```
+
+
+
+
+Observamos que con este método aumentamos el porcentaje de acierto en la predicción a un 92.14%. El mayor problema son los falsos positivos, es decir, que el algoritmo ha clasificado como supervivientes 20 casos que en realidad son no supervivientes. 
+Para ajustar esto podemos asignar penalizaciones a los falsos negativos y falsos positivos, penalizando más lo que nos interesa.Vamos a repetir el método ajustando las penalizaciones con el parámetro loss.
+
+
+
+
+```{r message= FALSE, warning=FALSE}
+
+library(rpart)
+model_cart<-rpart(Survived~Sex+Pclass+Age+SibSp+Parch+Embarked+Fare,data=data,method="class",parms=list(loss=c(0,1.20,1,0)))
+model_cart
+```
+
+Mostramos el nuevo árbol.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+par(xpd = NA)
+
+plot(model_cart)
+text(model_cart,use.n=TRUE)
+```
+
+Realizamos la predicción.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+predicted.classes <- predict( model_cart, test[,c(2,4:7,9,11)], type="class" )
+
+```
+
+Hallamos la matriz de confusión.
+
+```{r message= FALSE, warning=FALSE}
+conf_Matrix<-table(predicted.classes,test$Survived)
+conf_Matrix
+porcentaje_correcto<-100 * sum(diag(conf_Matrix)) / sum(conf_Matrix)
+porcentaje_correcto
+```
+
+
+Después de realizar el ajuste con los pesos, vemos cómo obtenemos un árbol más sencillo y efectivo ya que llegamos a un 97.28% de clasificación correcta.
+
+
+Por último vamos a intentar clasificar mediante un modelo de clústering por el algoritmo mclust, que es un algoritmo basado en modelos.
+ En este caso usa un modelo de mezclas gaussianas, que estima la probabilidad de que un dato pertenezca a cada una de las distribuciones, definidas por su media y su varianza. Para asignar los datos a las distribuciones usa el algoritmo de Esperanza-Maximización.
+
+Seleccionamos las columnas de los anteriores modelos e indicamos que sólo queremos 2 grupos.
+
+```{r message= FALSE, warning=FALSE}
+train<-data[,c(3,5:8,10,12)]
+
+levels(train$Sex)<-c(0,1)
+
+train$Sex<-as.numeric(as.character(train$Sex))
+
+train<-train[train$Embarked!="",]
+levels(train$Embarked)<-droplevels(train$Embarked)
+levels(train$Embarked)<-c(0,1,2)
+train$Embarked<-as.numeric(as.character(train$Embarked))
+
+
+library(mclust)
+fit <- Mclust(train,G=1:2)
+summary(fit)
+
+
+```
+
+
+
+Vamos a realizar la predicción sobre test, para ello debemos transformar las columnas a numérico, de la misma manera que en train.
+
+```{r message= FALSE, warning=FALSE}
+#install.packages("clue")
+mtest<-test
+
+
+
+levels(mtest$Sex)<-c(0,1)
+
+mtest$Sex<-as.numeric(as.character(mtest$Sex))
+
+levels(mtest$Embarked)<-c(0,1,2)
+mtest$Embarked<-as.numeric(as.character(mtest$Embarked))
+
+mpredict<-predict.Mclust(fit,mtest[,c(2,4:7,9,11)])
+
+
+```
+
+Vamos a evaluar el algoritmo de la misma forma que antes, con la matriz de confusión.
+
+```{r message= FALSE, warning=FALSE}
+
+
+
+conf_Matrix<-table(mpredict$classification,mtest$Survived)
+conf_Matrix
+porcentaje_correcto<-100 * sum(diag(conf_Matrix)) / sum(conf_Matrix)
+porcentaje_correcto
+
+
+```
+
+En este caso vemos que el algoritmo se queda en un 59% de efectividad, bastante menor que los anteriores.
+
+
+
+***********
+### 6. Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema? 
+***********
+
+
+Hemos comprobado cómo las variables del dataset que habíamos elegido pueden servir para resolver el problema que es predecir la probabilidad de supervivencia de una persona en el hundimiento del Titanic según sus características.
+
+Primero hemos determinado mediante pruebas estadísticas si existe relación entre las variables del dataset y la variable que indica si una persona es superviviente o no, hemos visto que todas las variables pueden ayudarnos en mayor o menor medida a discernir si una persona fue o no superviviente, aunque unas con más significación que otras.
+
+En cuanto a los modelos predictivos, la regresión logística obtiene buenos resultados con un 90% de acierto en los datos de test, sin embargo el árbol de decisión, ajustando las penalizaciones adecuadamente obtiene un excelente resultado y acierta un 97% de los casos. En cuanto a los modelos de clústering, vemos cómo no se ajustan bien para este caso ya que su eficacia se queda en un 60%.
+
+
+
